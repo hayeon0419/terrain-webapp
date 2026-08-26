@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>지형모델러 — 대지 지형 데이터 학습 서비스</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛰️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="#top">
+      <span class="logo-mark">⛰</span>
+      <span>지형모델러<sup>edu</sup></span>
+    </a>
+    <nav class="nav">
+      <a href="#pipeline">파이프라인</a>
+      <a href="#tool">도구 사용해보기</a>
+      <a href="#sources">데이터 소스</a>
+      <a href="#scope">범위 안내</a>
+    </nav>
+    <a class="btn btn-ghost" href="#tool">바로 시작하기</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="hero-contours" aria-hidden="true"></div>
+    <div class="wrap hero-inner">
+      <span class="eyebrow">학습용 프로젝트 · stura3d.com 벤치마킹</span>
+      <h1>주소만 입력하면,<br>대지의 지형이 3D 데이터가 됩니다.</h1>
+      <p class="hero-desc">
+        위치와 범위를 선택하면 등고선·건물 데이터를 수집해 3D 모델링 파이프라인으로 이어지는
+        기술 흐름을 직접 확인해보는 교육용 프로토타입입니다. 결제·구독·계정 등 비즈니스 로직 없이
+        순수 데이터 파이프라인에 집중했습니다.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#tool">범위 선택 도구 열기</a>
+        <a class="btn btn-outline" href="#pipeline">파이프라인 보기</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="pipeline" class="section">
+    <div class="wrap">
+      <h2 class="section-title">전체 파이프라인</h2>
+      <p class="section-sub">이 페이지는 <strong>1~3단계</strong>를 실제로 동작하는 형태로 구현합니다. 나머지 단계는 Python 기반 백엔드 영역으로, 다음 학습 단계에서 이어집니다.</p>
+      <ol class="pipeline-grid">
+        <li class="pipeline-card active">
+          <span class="step-no">1</span>
+          <h3>위치·범위 선택</h3>
+          <p>주소 검색 → 지오코딩 → 지도 이동, 원형/사각형 범위를 드래그로 조정</p>
+        </li>
+        <li class="pipeline-card active">
+          <span class="step-no">2</span>
+          <h3>레이어/포맷 선택</h3>
+          <p>등고선·건물 레이어, DXF/OBJ 출력 포맷을 체크박스로 지정</p>
+        </li>
+        <li class="pipeline-card active">
+          <span class="step-no">3</span>
+          <h3>데이터 수집</h3>
+          <p>OpenTopography DEM + VWorld 건물 데이터를 실제 API로 조회</p>
+        </li>
+        <li class="pipeline-card">
+          <span class="step-no">4</span>
+          <h3>지오프로세싱</h3>
+          <p>rasterio·skimage로 등고선 추출, 건물 매싱, 미리보기 생성</p>
+          <span class="badge">다음 단계 (Python)</span>
+        </li>
+        <li class="pipeline-card">
+          <span class="step-no">5</span>
+          <h3>포맷 변환</h3>
+          <p>ezdxf(DXF), trimesh/numpy-stl(OBJ)로 결과 파일 생성</p>
+          <span class="badge">다음 단계 (Python)</span>
+        </li>
+        <li class="pipeline-card">
+          <span class="step-no">6</span>
+          <h3>다운로드</h3>
+          <p>완성된 CAD/3D 파일을 사용자에게 전달</p>
+          <span class="badge">다음 단계</span>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="tool" class="section section-tool">
+    <div class="wrap">
+      <h2 class="section-title">범위 선택 &amp; 데이터 수집 도구</h2>
+      <p class="section-sub">지도에서 실제로 주소를 검색하고 범위를 조정할 수 있습니다. DEM/건물 조회는 각 서비스의 API 키를 입력하면 실제 엔드포인트를 호출합니다.</p>
+
+      <div class="tool-grid">
+        <div class="panel controls">
+
+          <div class="control-block">
+            <label class="control-label" for="address-input">주소 검색</label>
+            <div class="input-row">
+              <input id="address-input" type="text" placeholder="예: 서울특별시 중구 세종대로 110" autocomplete="off">
+              <button id="search-btn" class="btn btn-primary btn-sm" type="button">검색</button>
+            </div>
+            <ul id="search-results" class="search-results"></ul>
+            <p class="hint">지오코딩: OpenStreetMap Nominatim (무료, API 키 불필요)</p>
+          </div>
+
+          <div class="control-block">
+            <span class="control-label">범위 타입</span>
+            <div class="toggle-group" role="group">
+              <button class="toggle-btn active" data-mode="circle" type="button">원형</button>
+              <button class="toggle-btn" data-mode="rect" type="button">사각형</button>
+            </div>
+          </div>
+
+          <div class="control-block" id="circle-fields">
+            <label class="control-label" for="radius-input">반경 (m)</label>
+            <input id="radius-input" type="number" min="10" max="5000" step="10" value="300">
+          </div>
+
+          <div class="control-block hidden" id="rect-fields">
+            <span class="control-label">Bounding Box</span>
+            <div class="bbox-readout" id="bbox-readout">지도에서 사각형을 조정하세요</div>
+          </div>
+
+          <div class="control-block">
+            <span class="control-label">레이어</span>
+            <label class="checkbox"><input type="checkbox" id="layer-contour" value="contour" checked> 등고선 (Contour)</label>
+            <label class="checkbox"><input type="checkbox" id="layer-building" value="building" checked> 건물 (Building)</label>
+          </div>
+
+          <div class="control-block">
+            <label class="control-label" for="interval-input">등고선 간격 (m)</label>
+            <input id="interval-input" type="number" min="0.5" max="20" step="0.5" value="1">
+          </div>
+
+          <div class="control-block">
+            <span class="control-label">출력 포맷</span>
+            <label class="checkbox"><input type="checkbox" name="fmt" value="dxf" checked> DXF</label>
+            <label class="checkbox"><input type="checkbox" name="fmt" value="obj" checked> OBJ</label>
+          </div>
+
+          <details class="control-block advanced">
+            <summary>고급 설정 (API 키)</summary>
+            <label class="control-label" for="dem-select">DEM 데이터셋</label>
+            <select id="dem-select">
+              <option value="SRTMGL1">SRTM GL1 (30m)</option>
+              <option value="COP30">Copernicus GLO-30 (30m)</option>
+              <option value="AW3D30">ALOS World 3D (30m)</option>
+              <option value="NASADEM">NASADEM (30m)</option>
+            </select>
+
+            <label class="control-label" for="ot-key">OpenTopography API Key</label>
+            <input id="ot-key" type="text" placeholder="무료 발급: portal.opentopography.org">
+
+            <label class="control-label" for="vw-key">VWorld API Key</label>
+            <input id="vw-key" type="text" placeholder="무료 발급: vworld.kr">
+
+            <label class="control-label" for="vw-layer">VWorld 건물 레이어명 (WFS typename)</label>
+            <input id="vw-layer" type="text" value="lt_c_spbd" placeholder="예: lt_c_spbd">
+            <p class="hint">레이어명은 VWorld 데이터 카탈로그 기준으로 변경될 수 있습니다. 필요 시 직접 확인 후 수정하세요.</p>
+          </details>
+
+          <button id="collect-btn" class="btn btn-primary btn-block" type="button">데이터 수집 시작</button>
+
+          <div class="control-block">
+            <span class="control-label">선택 config (JSON)</span>
+            <pre id="config-json" class="code-block"></pre>
+            <button id="download-config-btn" class="btn btn-outline btn-sm" type="button">config.json 다운로드</button>
+          </div>
+
+          <div class="control-block">
+            <span class="control-label">수집 로그</span>
+            <div id="log-area" class="log-area">대기 중…</div>
+          </div>
+
+        </div>
+
+        <div class="panel map-panel">
+          <div id="map"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sources" class="section">
+    <div class="wrap">
+      <h2 class="section-title">데이터 소스</h2>
+      <div class="source-grid">
+        <article class="source-card">
+          <h3>DEM (지형 고도) — OpenTopography REST API</h3>
+          <ul>
+            <li>완전 무료, 비학술 사용자 기준 하루 50회 요청 제한</li>
+            <li>bbox 좌표를 넘기면 실시간으로 GeoTIFF를 반환 (별도 다운로드/캐싱 불필요)</li>
+            <li>데이터셋: SRTM GL1 / Copernicus GLO-30 / ALOS World 3D / NASADEM</li>
+          </ul>
+          <p class="note">
+            <strong>한국 지역은 전부 30m 해상도가 상한선입니다.</strong>
+            여기서 "30m 해상도"는 격자 한 칸의 가로×세로 크기, 즉 표본 촘촘함의 문제입니다.
+            리샘플링(보간)으로 부드럽게 보이게 할 수는 있어도 실제 정밀도는 30m급 그대로입니다.
+            OpenTopography가 1m급 LiDAR를 제공하는 지역은 미국(USGS 3DEP), 노르웨이·핀란드·스위스·리히텐슈타인, 뉴질랜드 등 일부뿐이며 한국은 해당하지 않습니다.
+          </p>
+        </article>
+        <article class="source-card">
+          <h3>건물 — VWorld WFS</h3>
+          <ul>
+            <li>인증키 발급 필요 (vworld.kr)</li>
+            <li>지적경계, 도로 레이어는 이번 학습 범위에서 제외 (추후 확장 가능)</li>
+          </ul>
+        </article>
+      </div>
+      <p class="note note-muted">
+        국내 정부 채널(국토정보플랫폼, VWorld 3D 원자료 API)은 실시간 API 부재 또는 2019년 보안규정에 따른 폐쇄로 이번 프로젝트에서 제외했습니다.
+      </p>
+    </div>
+  </section>
+
+  <section id="scope" class="section section-scope">
+    <div class="wrap">
+      <h2 class="section-title">이번 학습 범위에서 제외된 것</h2>
+      <ul class="scope-list">
+        <li>결제 / 구독 / 크레딧, 계정 / 로그인</li>
+        <li>지적경계, 도로 레이어</li>
+        <li>3DM(Rhino) / SKP(SketchUp) / RVT(Revit) 포맷 변환 구현 — 향후 과제로만 언급</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>지형모델러 edu — stura3d.com 벤치마킹 학습 프로젝트. 실제 서비스가 아니며 비즈니스 로직을 포함하지 않습니다.</p>
+  </div>
+</footer>
+
+<script src="leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
