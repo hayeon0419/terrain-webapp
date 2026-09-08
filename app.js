@@ -30,6 +30,10 @@
     configJson: el('config-json'),
     downloadConfigBtn: el('download-config-btn'),
     logArea: el('log-area'),
+    backendUrl: el('backend-url'),
+    processBtn: el('process-btn'),
+    processLog: el('process-log'),
+    previewWrap: el('preview-wrap'),
   };
 
   // ---------- map setup ----------
@@ -434,6 +438,68 @@
       log(`건물 조회 중 오류: ${err.message} (브라우저 직접 호출 시 CORS로 차단될 수 있습니다. 실서비스에서는 백엔드 프록시가 필요합니다.)`, 'err');
     }
   }
+
+  // ---------- backend geoprocessing ----------
+  function processLog(msg, type) {
+    const line = document.createElement('div');
+    const time = new Date().toISOString().substr(11, 8);
+    line.textContent = `[${time}] ${msg}`;
+    if (type) line.classList.add(`log-${type}`);
+    els.processLog.appendChild(line);
+    els.processLog.scrollTop = els.processLog.scrollHeight;
+  }
+
+  els.processBtn.addEventListener('click', async () => {
+    els.processLog.innerHTML = '';
+    els.previewWrap.innerHTML = '아직 실행 결과가 없습니다';
+    els.processBtn.disabled = true;
+    els.processBtn.textContent = '실행 중…';
+
+    const backendUrl = els.backendUrl.value.trim().replace(/\/$/, '');
+    const config = buildConfig();
+    processLog('백엔드에 요청 전송 중…');
+
+    try {
+      const res = await fetch(`${backendUrl}/api/process`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        processLog(`요청 실패 (HTTP ${res.status}): ${text.slice(0, 300)}`, 'err');
+        return;
+      }
+      const data = await res.json();
+      processLog(`처리 완료 — 등고선 ${data.contour_count}개, 건물 ${data.building_count}개`, 'ok');
+      if (data.building_warning) {
+        processLog(data.building_warning, 'warn');
+      }
+
+      els.previewWrap.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = backendUrl + data.preview_url;
+      img.style.width = '100%';
+      img.style.display = 'block';
+      els.previewWrap.appendChild(img);
+
+      Object.entries(data.files || {}).forEach(([fmt, url]) => {
+        const link = document.createElement('a');
+        link.href = backendUrl + url;
+        link.textContent = `model.${fmt} 다운로드`;
+        link.className = 'btn btn-outline btn-sm';
+        link.style.marginTop = '8px';
+        link.style.marginRight = '8px';
+        link.target = '_blank';
+        els.previewWrap.appendChild(link);
+      });
+    } catch (err) {
+      processLog(`백엔드 연결 실패: ${err.message} (백엔드 서버가 실행 중인지, 주소가 맞는지 확인하세요)`, 'err');
+    } finally {
+      els.processBtn.disabled = false;
+      els.processBtn.textContent = '지오프로세싱 실행';
+    }
+  });
 
   // ---------- init ----------
   setMode('circle');

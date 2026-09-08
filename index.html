@@ -21,6 +21,7 @@
     <nav class="nav">
       <a href="#pipeline">파이프라인</a>
       <a href="#tool">도구 사용해보기</a>
+      <a href="#backend">지오프로세싱</a>
       <a href="#sources">데이터 소스</a>
       <a href="#scope">범위 안내</a>
     </nav>
@@ -67,23 +68,23 @@
           <h3>데이터 수집</h3>
           <p>OpenTopography DEM + VWorld 건물 데이터를 실제 API로 조회</p>
         </li>
-        <li class="pipeline-card">
+        <li class="pipeline-card active">
           <span class="step-no">4</span>
           <h3>지오프로세싱</h3>
           <p>rasterio·skimage로 등고선 추출, 건물 매싱, 미리보기 생성</p>
-          <span class="badge">다음 단계 (Python)</span>
+          <span class="badge">Python 백엔드 (로컬 실행)</span>
         </li>
-        <li class="pipeline-card">
+        <li class="pipeline-card active">
           <span class="step-no">5</span>
           <h3>포맷 변환</h3>
-          <p>ezdxf(DXF), trimesh/numpy-stl(OBJ)로 결과 파일 생성</p>
-          <span class="badge">다음 단계 (Python)</span>
+          <p>ezdxf(DXF), trimesh(OBJ)로 결과 파일 생성</p>
+          <span class="badge">Python 백엔드 (로컬 실행)</span>
         </li>
-        <li class="pipeline-card">
+        <li class="pipeline-card active">
           <span class="step-no">6</span>
           <h3>다운로드</h3>
           <p>완성된 CAD/3D 파일을 사용자에게 전달</p>
-          <span class="badge">다음 단계</span>
+          <span class="badge">Python 백엔드 (로컬 실행)</span>
         </li>
       </ol>
     </div>
@@ -185,6 +186,38 @@
     </div>
   </section>
 
+  <section id="backend" class="section section-tool">
+    <div class="wrap">
+      <h2 class="section-title">지오프로세싱 실행 (4~6단계)</h2>
+      <p class="section-sub">
+        위에서 선택한 범위·레이어·포맷으로 Python 백엔드가 등고선 추출·건물 매싱·DXF/OBJ 변환까지 실행합니다.
+        API 키는 서버에만 저장되며 브라우저에는 노출되지 않습니다. 아래 공개 백엔드는 <strong>등고선(DEM)은 바로 동작</strong>하지만,
+        <strong>건물(VWorld) 조회는 VWorld가 해외 서버 IP를 차단</strong>하고 있어 이 공개 서버에서는 동작하지 않습니다 —
+        건물 데이터까지 받으려면 이 저장소를 내려받아 본인 PC(국내 네트워크)에서 백엔드를 직접 실행해야 합니다.
+      </p>
+      <div class="tool-grid">
+        <div class="panel controls">
+          <div class="control-block">
+            <label class="control-label" for="backend-url">백엔드 주소</label>
+            <input id="backend-url" type="text" value="https://terrain-webapp.onrender.com">
+            <p class="hint">공개 서버(위 주소, 해외 호스팅)는 등고선만 됩니다. 건물까지 받으려면 로컬에서 백엔드를 실행하고 이 값을 http://localhost:8000으로 바꾸세요. 첫 요청은 서버가 잠들어 있으면 최대 1분 정도 걸릴 수 있습니다.</p>
+          </div>
+          <button id="process-btn" class="btn btn-primary btn-block" type="button">지오프로세싱 실행</button>
+          <div class="control-block">
+            <span class="control-label">실행 로그</span>
+            <div id="process-log" class="log-area">대기 중…</div>
+          </div>
+        </div>
+        <div class="panel" style="padding:20px;">
+          <span class="control-label">미리보기</span>
+          <div id="preview-wrap" style="margin-top:10px; border:1px solid var(--panel-border); border-radius:8px; overflow:hidden; min-height:300px; display:flex; align-items:center; justify-content:center; color:var(--text-faint); font-size:13px;">
+            아직 실행 결과가 없습니다
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="sources" class="section">
     <div class="wrap">
       <h2 class="section-title">데이터 소스</h2>
@@ -214,6 +247,11 @@
             VWorld WFS 응답에는 CORS 허용 헤더(Access-Control-Allow-Origin)가 없어, 키와 도메인 등록이 올바르더라도
             프런트엔드 JS의 fetch 호출은 항상 차단됩니다 (서버 간 호출만 전제된 API). 실제 데이터를 받으려면
             지오프로세싱 백엔드가 VWorld 호출을 대신 수행하는 프록시 역할까지 겸해야 합니다.
+          </p>
+          <p class="note">
+            <strong>그 프록시 서버도 반드시 국내 IP여야 합니다.</strong>
+            VWorld는 해외 서버 IP의 접속 자체를 차단합니다 (502 오류). 그래서 이 사이트의 공개 백엔드(해외 호스팅)는
+            등고선(DEM)만 처리하고, 건물 데이터는 국내 네트워크에서 백엔드를 직접 실행할 때만 동작합니다.
           </p>
         </article>
       </div>
