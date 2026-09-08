@@ -209,6 +209,12 @@
             <li>인증키 발급 필요 (vworld.kr)</li>
             <li>지적경계, 도로 레이어는 이번 학습 범위에서 제외 (추후 확장 가능)</li>
           </ul>
+          <p class="note">
+            <strong>브라우저에서 직접 호출이 불가능합니다.</strong>
+            VWorld WFS 응답에는 CORS 허용 헤더(Access-Control-Allow-Origin)가 없어, 키와 도메인 등록이 올바르더라도
+            프런트엔드 JS의 fetch 호출은 항상 차단됩니다 (서버 간 호출만 전제된 API). 실제 데이터를 받으려면
+            지오프로세싱 백엔드가 VWorld 호출을 대신 수행하는 프록시 역할까지 겸해야 합니다.
+          </p>
         </article>
       </div>
       <p class="note note-muted">
