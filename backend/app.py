@@ -109,11 +109,19 @@ def process(req: ProcessRequest):
         terrain_vertices, terrain_faces = dem_mod.build_terrain_mesh(elevation, transform, lon0, lat0)
 
     buildings = []
+    building_warning = None
     if "building" in req.layers:
         if not VWORLD_API_KEY:
-            raise HTTPException(500, "서버에 VWORLD_API_KEY가 설정되어 있지 않습니다")
-        geojson = buildings_mod.fetch_buildings_geojson(bbox, VWORLD_API_KEY, VWORLD_DOMAIN, req.vworldTypename)
-        buildings = buildings_mod.buildings_to_meshes(geojson, lon0, lat0)
+            building_warning = "서버에 VWORLD_API_KEY가 설정되어 있지 않아 건물 조회를 건너뛰었습니다"
+        else:
+            try:
+                geojson = buildings_mod.fetch_buildings_geojson(bbox, VWORLD_API_KEY, VWORLD_DOMAIN, req.vworldTypename)
+                buildings = buildings_mod.buildings_to_meshes(geojson, lon0, lat0)
+            except Exception as exc:
+                building_warning = (
+                    f"VWorld 건물 조회 실패: {exc} "
+                    "(VWorld는 해외 서버 IP를 차단합니다 — 국내 네트워크에서 백엔드를 실행해야 동작합니다)"
+                )
 
     job_id = uuid.uuid4().hex[:12]
     job_dir = os.path.join(OUTPUTS_DIR, job_id)
@@ -128,6 +136,7 @@ def process(req: ProcessRequest):
         "preview_url": f"/outputs/{job_id}/preview.png",
         "contour_count": len(contours),
         "building_count": len(buildings),
+        "building_warning": building_warning,
         "files": {},
     }
 
