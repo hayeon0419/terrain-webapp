@@ -405,7 +405,8 @@
     }
     log(`VWorld WFS(${typename}) 건물 조회 중…`);
     try {
-      const bboxParam = `${bbox.west},${bbox.south},${bbox.east},${bbox.north},EPSG:4326`;
+      // WFS 2.0.0 + EPSG:4326 uses lat,lon axis order (south,west,north,east), not lon,lat.
+      const bboxParam = `${bbox.south},${bbox.west},${bbox.north},${bbox.east},EPSG:4326`;
       const url =
         `https://api.vworld.kr/req/wfs?service=WFS&version=2.0.0&request=GetFeature` +
         `&typename=${encodeURIComponent(typename)}&bbox=${encodeURIComponent(bboxParam)}` +
